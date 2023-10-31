@@ -6,7 +6,7 @@ import zipfile
 
  
 def index(request):
-    return render(request, "index.html")
+    return render(request, "indexxx.html")
  
 def postuser(request):    
     nam = request.POST.get("resp", "Undefined") # получаем из данных запроса POST отправленные через форму данные
