@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>HTTP_service</title>
+</head>
+<body>
+    <h2>Форма запроса</h2>
+    <form method="post" action="tables/">
+        {% csrf_token %}
+        <p>Запрос:<br> <input name="resp" /></p>
+        <input type="submit" value="Отправить" />
+    </form>
+
+    <h2>Форма скачивания kaggle</h2>
+    <form method="post" action="kaggle_table/">
+        {% csrf_token %}
+        <p>Запрос:<br> <input name="dwnld" /></p>
+        <input type="submit" value="запросить" />
+    </form>
+
+
+
+    <h1>Django Button Click</h1>
+    <button onclick="runFunction()">Click me</button>
+    <script>
+        function runFunction() {
+            fetch('run_function/')
+        }
+    </script>
+</body>
+</html>
