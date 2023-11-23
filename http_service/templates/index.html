@@ -5,28 +5,41 @@
     <title>HTTP_service</title>
 </head>
 <body>
-    <h2>Форма запроса</h2>
-    <form method="post" action="tables/">
+    <h3>Данные таблицы</h3>
+    <form method="post" action="table/">
         {% csrf_token %}
-        <p>Запрос:<br> <input name="resp" /></p>
+        <p>Название таблицы<br> <input name="resp" /></p>
         <input type="submit" value="Отправить" />
     </form>
 
-    <h2>Форма скачивания kaggle</h2>
-    <form method="post" action="kaggle_table/">
+    <h3>Удаление таблицы</h3>
+    <form method="post" action="del_tables/">
         {% csrf_token %}
-        <p>Запрос:<br> <input name="dwnld" /></p>
-        <input type="submit" value="запросить" />
+        <p>Название таблицы<br> <input name="delete_table" /></p>
+        <input type="submit" value="Удалить" />
     </form>
 
+    <h3>Форма скачивания с kaggle</h3>
+    <form method="post" action="kaggle_table/">
+        {% csrf_token %}
+        <p>Ссылка таблицы<br> <input name="dwnld" /></p>
+        <input type="submit" value="Скачать" />
+    </form>
 
+    <h3>Получить названия всех таблиц</h3>
+    <form method="get" action="all_tables/">        
+        <button onclick="start_all_tables()">Все таблицы</button>
+        <script>
+            function start_all_tables() {
+                fetch('all_tables/')
+            }
+        </script>
+    </form>
 
-    <h1>Django Button Click</h1>
-    <button onclick="runFunction()">Click me</button>
-    <script>
-        function runFunction() {
-            fetch('run_function/')
-        }
-    </script>
+    <h3>Загрузка .CSV файла</h3>
+    <form action="upload/">
+        <button type="submit">Загрузить</button>
+    </form>
+
 </body>
 </html>

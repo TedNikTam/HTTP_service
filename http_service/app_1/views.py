@@ -1,16 +1,65 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-import requests
-import os
 import pandas as pd
-import zipfile
 import sqlite3
 from dwnld_kag_tab import dwnld_kag_tab
- 
+from pd_sql import upload_table_to_db_2
+from .forms import FileUploadForm
+
+
+#=====================================================================================
+# получаем запрос со страницы
 def index(request):
     return render(request, "index.html")
+#=====================================================================================
+# принемает назание таблицы и отправляет названия столбцов и содержимое   
+def post_tables(request):
+    # Подключаемся к базе данных   
+    connection = sqlite3.connect('db.sqlite3') 
+    cursor = connection.cursor()
+    # получение запроса со страницы
+    table_name = request.POST.get("resp", "Undefined")
+    cursor = connection.execute(f'SELECT * FROM {table_name}')
+    
+    # содержимое таблицы - получется (список из кортежей)
+    table_content = cursor.fetchall()
+    # содержимое таблицы преобразуется в строку
+    string = ''
+    for el in table_content:
+        string += str(el)
+    table_content_list = ')<br>('.join(string.split(')('))
 
-#===========================================
+    # получаем названия столцов
+    connection.row_factory = sqlite3.Row
+    cursor = connection.execute(f'SELECT * FROM {table_name}')
+    # получаем первую запись - названия столбцов
+    column_names = cursor.fetchone()
+    # названия столбцов (тип - список) преобразуется в строку и выводится списком
+    column_names_list ="<br>".join(column_names.keys())
+    
+    # закрываем соединение с базой
+    connection.commit()
+    connection.close()
+    # отправляем полученные данные на страницу
+    return HttpResponse(f"<h3>Название столбцов: <br> {column_names_list} <br><br> Содержимое таблицы: <br>{table_content_list} </h3>")
+#=====================================================================================
+# принемает назание таблицы и удаляет её
+def del_tables(request):
+    # Подключаемся к базе данных   
+    connection = sqlite3.connect('db.sqlite3') 
+    cursor = connection.cursor()
+    # получение запроса со страницы
+    table_name = request.POST.get("delete_table", "Undefined")
+    # формирование запроса на удаление таблицы из базы
+    del_table = f'DROP TABLE IF EXISTS {table_name};'
+    # удаление таблицы
+    cursor.execute(del_table)
+    # закрываем соединение с базой
+    connection.commit()
+    connection.close()
+    # отправляем ответ на страницу
+    return HttpResponse(f"<h3>Таблица удалена</h3>")
+#===================================================================================== 
 # принемает ссылку на скачиваение таблицы с kaggle и отправляет ответ
 def kaggle_table(request):
     kaggle_table_link = request.POST.get("dwnld", "Undefined") 
@@ -18,84 +67,48 @@ def kaggle_table(request):
     a = dwnld_kag_tab(kaggle_table_link)
     # ответ отправляется на страницу
     return HttpResponse(a)
-   
-
-
-def post_tables(request):
+#=====================================================================================
+# по нажатию кнопки отправляет список таблиц
+def all_tables(request):
     # Подключаемся к базе данных   
     connection = sqlite3.connect('db.sqlite3') 
     cursor = connection.cursor()
-
-    # получаем спиксок всех таблиц
+    # получат и отправляет спиксок всех таблиц
     all_tables = cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    all_tables_list = []
+    all_tables_listik = []
     for table in all_tables:
-        all_tables_list.append(table[0])
+        all_tables_listik.append(table[0])
+    all_tables_list ="<br>".join(all_tables_listik)
+    # ответ отправляется на страницу
+    return HttpResponse(f"<h3>Все таблицы: <br> {all_tables_list} </h3>")
+#=====================================================================================
+# загружается файл в папку uplads и в таблице app_1_file сохраняется информация об адресе 
+def upload_file(request):
+    if request.method == 'POST':
+        form = FileUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            find_file()
+    else:
+        form = FileUploadForm()
+    return render(request, 'upload_file.html', {'form': form})
 
-    # получение запроса со страницы
-    table_name = request.POST.get("resp", "Undefined") 
-    print(type(table_name))
-    cursor = connection.execute(f'SELECT * FROM {table_name}')
-    table_content = cursor.fetchall()
- 
-    # получаем названия столцов в таблице
-    connection.row_factory = sqlite3.Row
-    cursor = connection.execute(f'SELECT * FROM {table_name}')
-    column_names = cursor.fetchone()
-    # names = column_names.keys() # .keys - вытаскивает имена
-    
+# после загрузки формируется адрес файла для создания таблицы, с его содержимым, в базе
+# работает строго с CSV
+def find_file():
+    # Подключаемся к базе данных
+    connection = sqlite3.connect('db.sqlite3')
+    cursor = connection.cursor()
+    # делаем запрос в базу к таблице app_1_file куда сохранились название и адрес файла
+    cursor.execute('SELECT * FROM app_1_file')
+    app_1_file = cursor.fetchall()
+    for i in app_1_file:
+        # формируется полный адресс файла
+        p = f"C:/Users/NickT/Desktop/PY_code/qwe/HTTP_service/http_service/{i[2]}"
+        # файл читается
+        df = pd.read_csv(p, encoding='latin-1')
+        # отправляется для полноценного создания таблицы, с содержимым файла, в базе
+        upload_table_to_db_2(p)
     # закрываем соединение с базой
-    connection.commit()
     connection.close()
-
-    # отправляем полученные данные на страницу
-    return HttpResponse(f"<h3>Все таблицы: <br>{all_tables_list} <br><br> Название столбцов: <br> {column_names.keys()} <br><br> Содержимое таблицы: <br>{table_content} </h3>")
-#===========================================
-
-# def postuser(request):   
-#     # Подключаемся к базе данных 
-#     conn = sqlite3.connect('db.sqlite3')
-#     # получение запроса со страницы
-#     nam = request.POST.get("resp", "Undefined") 
-#     # скачивание файла
-#     os.system(f'kaggle datasets download -d {nam}') 
-#     # формирование названия zip-файла
-#     file = (str(nam.split('/')[1]) +'.zip') 
-#     # zip-файл открывается на чтение
-#     f_zip = zipfile.ZipFile(file, 'r') 
-#     # извлекается содержимое zip-файла
-#     f_zip.extractall('./') 
-#     # запускается цикл по чтению содержимого zip-файла
-#     for file_info in f_zip.infolist(): 
-#         # читаем файл
-#         data = pd.read_csv(file_info.filename, encoding='latin-1')
-#         # Читаем файл CSV и создаем таблицу в базе данных
-#         data.to_sql(file_info.filename, conn, if_exists='replace', index=False)
-#         print(
-#             "\nНазвание файла: ", file_info.filename,
-#             "\nИнформация о колонках в файле: ", data.columns,
-#             "\nКол-во строк и столбцов: ", data.shape,
-#             )
-
-#     # zip-файл закрывается   
-#     f_zip.close() 
-#     # после получения информации zip-файл удаляется
-#     os.remove(file)
-#     # после получения информации файл удаляется 
-#     os.remove(file_info.filename) 
-#     # Сохраняем изменения и закрываем соединение
-#     conn.commit()
-#     conn.close()
-#     # отправляем полученные данные на страницу
-#     return HttpResponse(f"<h3>Название файла: <br> {file_info.filename} <br><br> Информация о колонках в файле: <br>{list(data.columns)} <br><br> Кол-во строк и столбцов: <br>{data.shape}</h3>")
-#===========================================
-# def index(request):
-#     return render(request, "index.html")
-
-# def postuser(request):    
-#     nam = request.POST.get("resp", "Undefined") # получаем из данных запроса POST отправленные через форму данные
-#     url = f'https://www.kaggle.com/datasets?search={nam}'
-#     # datasets_list = os.system(f'kaggle datasets list -s {nam}')
-#     responce = requests.get(url)
-#     print(responce.url, 'url')
-#     return HttpResponse(f"<h3>Название файла: {responce.url} <br> {os.system(f'kaggle datasets list -s {nam}')} </h3>")
+#=====================================================================================

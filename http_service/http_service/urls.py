@@ -19,9 +19,10 @@ from app_1 import views
   
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("", views.index),
-    path("tables/", views.post_tables),
-    path("kaggle_table/", views.kaggle_table),
-    
-    # path('run_function/', views.run_function),
+    path('', views.index),
+    path('table/', views.post_tables),
+    path('del_tables/', views.del_tables),
+    path('kaggle_table/', views.kaggle_table),    
+    path('all_tables/', views.all_tables),
+    path('upload/', views.upload_file, name='upload_file'),
 ]

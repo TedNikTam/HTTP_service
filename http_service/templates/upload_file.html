@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Загрузка .CSV файла</title>
+</head>
+<body>
+    <h3>Загрузка .CSV файла</h3>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Загрузить</button>
+        <button type="reset">Очистить</button>
+        <button onclick="window.location.href = 'http://127.0.0.1:8000/';">Главная</button>
+    </form>
+</body>
+</html>
