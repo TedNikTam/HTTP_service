@@ -2,9 +2,10 @@ from django.shortcuts import render
 from django.http import HttpResponse
 import pandas as pd
 import sqlite3
-from dwnld_kag_tab import dwnld_kag_tab
-from pd_sql import upload_table_to_db_2
 from .forms import FileUploadForm
+from dwnld_kag_tab import dwnld_kag_tab
+from creat_table_info import creat_table_info
+from add_file_to_sql_data import add_file_to_sql_data
 
 
 #=====================================================================================
@@ -14,34 +15,12 @@ def index(request):
 #=====================================================================================
 # принемает назание таблицы и отправляет названия столбцов и содержимое   
 def post_tables(request):
-    # Подключаемся к базе данных   
-    connection = sqlite3.connect('db.sqlite3') 
-    cursor = connection.cursor()
     # получение запроса со страницы
     table_name = request.POST.get("resp", "Undefined")
-    cursor = connection.execute(f'SELECT * FROM {table_name}')
-    
-    # содержимое таблицы - получется (список из кортежей)
-    table_content = cursor.fetchall()
-    # содержимое таблицы преобразуется в строку
-    string = ''
-    for el in table_content:
-        string += str(el)
-    table_content_list = ')<br>('.join(string.split(')('))
-
-    # получаем названия столцов
-    connection.row_factory = sqlite3.Row
-    cursor = connection.execute(f'SELECT * FROM {table_name}')
-    # получаем первую запись - названия столбцов
-    column_names = cursor.fetchone()
-    # названия столбцов (тип - список) преобразуется в строку и выводится списком
-    column_names_list ="<br>".join(column_names.keys())
-    
-    # закрываем соединение с базой
-    connection.commit()
-    connection.close()
-    # отправляем полученные данные на страницу
-    return HttpResponse(f"<h3>Название столбцов: <br> {column_names_list} <br><br> Содержимое таблицы: <br>{table_content_list} </h3>")
+    # запрос отправляется для формирования данных о таблице
+    sss = creat_table_info(table_name)
+    # отправляем полученные данные обратно на страницу
+    return HttpResponse(sss)
 #=====================================================================================
 # принемает назание таблицы и удаляет её
 def del_tables(request):
@@ -88,27 +67,12 @@ def upload_file(request):
         form = FileUploadForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            find_file()
+            add_file_to_sql_data()
     else:
         form = FileUploadForm()
     return render(request, 'upload_file.html', {'form': form})
 
 # после загрузки формируется адрес файла для создания таблицы, с его содержимым, в базе
 # работает строго с CSV
-def find_file():
-    # Подключаемся к базе данных
-    connection = sqlite3.connect('db.sqlite3')
-    cursor = connection.cursor()
-    # делаем запрос в базу к таблице app_1_file куда сохранились название и адрес файла
-    cursor.execute('SELECT * FROM app_1_file')
-    app_1_file = cursor.fetchall()
-    for i in app_1_file:
-        # формируется полный адресс файла
-        p = f"C:/Users/NickT/Desktop/PY_code/qwe/HTTP_service/http_service/{i[2]}"
-        # файл читается
-        df = pd.read_csv(p, encoding='latin-1')
-        # отправляется для полноценного создания таблицы, с содержимым файла, в базе
-        upload_table_to_db_2(p)
-    # закрываем соединение с базой
-    connection.close()
+
 #=====================================================================================
