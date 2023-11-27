@@ -15,7 +15,7 @@ def upload_table_to_db(p: str):
     # отделяем расширение файла
     file = (str(p.split('.')[0])) 
     # меняем тире(минус) на подчерк
-    new_name = file.replace('-', "_") 
+    new_name = file.replace('-' and ' ', "_") 
     # загружаем файл в базу
     df.to_sql(new_name, connection, if_exists='replace', index=False) 
     
@@ -35,7 +35,7 @@ def upload_table_to_db_2(p: str):
     # отделяем часть указанного пути до последнего слеша(/)
     file_2 = (str(file.split('/')[-1])) 
     # меняем тире(минус) на подчерк
-    table_name = file_2.replace('-', "_") 
+    table_name = file_2.replace('-' and ' ', "_") 
     # загружаем файл в базу
     df.to_sql(table_name, connection, if_exists='replace', index=False) 
     

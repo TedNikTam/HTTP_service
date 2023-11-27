@@ -1,11 +1,11 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-import pandas as pd
 import sqlite3
 from .forms import FileUploadForm
 from dwnld_kag_tab import dwnld_kag_tab
 from creat_table_info import creat_table_info
 from add_file_to_sql_data import add_file_to_sql_data
+from sort_by_column import sort_by_column
 
 
 #=====================================================================================
@@ -19,6 +19,8 @@ def post_tables(request):
     table_name = request.POST.get("resp", "Undefined")
     # запрос отправляется для формирования данных о таблице
     sss = creat_table_info(table_name)
+    # отправляется название таблицы для сортировки по столбцам
+    ddd = sort_by_column(table_name)
     # отправляем полученные данные обратно на страницу
     return HttpResponse(sss)
 #=====================================================================================
